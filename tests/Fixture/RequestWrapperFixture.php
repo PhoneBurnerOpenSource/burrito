@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhoneBurnerTest\Http\Message\Fixture;
+namespace PhoneBurner\Tests\Http\Message\Fixture;
 
 use PhoneBurner\Http\Message\RequestWrapper;
 use Psr\Http\Message\RequestInterface;
@@ -11,9 +11,9 @@ class RequestWrapperFixture implements RequestInterface
 {
     use RequestWrapper;
 
-    public function __construct(RequestInterface $request = null, callable $factory = null)
+    public function __construct(RequestInterface|null $request = null, callable|null $factory = null)
     {
-        if (null !== $request) {
+        if ($request instanceof RequestInterface) {
             $this->setWrapped($request);
         }
 

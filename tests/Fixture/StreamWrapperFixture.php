@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhoneBurnerTest\Http\Message\Fixture;
+namespace PhoneBurner\Tests\Http\Message\Fixture;
 
 use PhoneBurner\Http\Message\StreamWrapper;
 use Psr\Http\Message\StreamInterface;
@@ -11,9 +11,9 @@ class StreamWrapperFixture implements StreamInterface
 {
     use StreamWrapper;
 
-    public function __construct(StreamInterface $stream = null)
+    public function __construct(StreamInterface|null $stream = null)
     {
-        if (null !== $stream) {
+        if ($stream instanceof StreamInterface) {
             $this->setWrapped($stream);
         }
     }

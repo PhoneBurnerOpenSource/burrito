@@ -1,16 +1,21 @@
 HTTP Tortilla - HTTP Message (PSR-7) Wrapper
 ============================================
 
-This library provides a simple set of traits to allow wrapping (or 
+This library provides a simple set of traits to allow wrapping (or
 decoration) of various PSR-7 classes. Wrapping the classes allows easy
 addition of convenience methods while maintaining compatibility with
 code that relies on the underlying PSR interfaces.
 
-PHP 7.1
+Requirements
 -------
+This package will work with either v1.1 or v2.0 of the PSR-7 interfaces, but
+does not provide the actual implementations to be wrapped. Those can be found
+in other packages, e.g [`guzzlehttp/psr-7`](https://github.com/guzzle/psr7)
+or [Laminas Diactoros](https://github.com/laminas/laminas-diactoros).
+
 As the traits provide the interface methods, they also _enhance_ the
 method signatures with type hints and return values. Because of that
-PHP 7.1 or higher is required.
+PHP 8.2 or higher is required.
 
 Usage
 -----
@@ -36,16 +41,16 @@ used.
 class Request implements ServerRequestInterface
 {
     use ServerRequestWrapper;
-    
-    public function __construct(ServerRequestInterface $request) 
+
+    public function __construct(ServerRequestInterface $request)
     {
         // wrap this object, and proxy all the interface methods to it
-        $this->setMessage($request); 
-        
-        // wrap all proxied `with*` methods in this function 
+        $this->setMessage($request);
+
+        // wrap all proxied `with*` methods in this function
         $this->setFactory(function(ServerRequestInterface $request){
-            // now `with*` will return an instnace of the current class
-            return new self($request); 
+            // now `with*` will return an instance of the current class
+            return new self($request);
         });
     }
 }
@@ -60,19 +65,19 @@ collection (and not the interface's `array`):
 class Request implements ServerRequestInterface
 {
     use ServerRequestWrapper;
-    
-    public function __construct(ServerRequestInterface $request) 
+
+    public function __construct(ServerRequestInterface $request)
     {
         // wrap this object, and proxy all the interface methods to it
-        $this->setMessage($request); 
-        
-        // wrap all proxied `with*` methods in this function 
+        $this->setMessage($request);
+
+        // wrap all proxied `with*` methods in this function
         $this->setFactory(function(ServerRequestInterface $request){
-            // now `with*` will return an instnace of the current class
-            return new self($request); 
+            // now `with*` will return an instance of the current class
+            return new self($request);
         });
     }
-    
+
     public function getQueryCollection()
     {
         return new Collection($this->getQueryParams());
@@ -86,31 +91,31 @@ Or perhaps the underlying library doesn't handle parsing JSON requests:
 class Request implements ServerRequestInterface
 {
     use ServerRequestWrapper;
-    
-    public function __construct(ServerRequestInterface $request) 
+
+    public function __construct(ServerRequestInterface $request)
     {
         // wrap this object, and proxy all the interface methods to it
-        $this->setMessage($request); 
-        
-        // wrap all proxied `with*` methods in this function 
+        $this->setMessage($request);
+
+        // wrap all proxied `with*` methods in this function
         $this->setFactory(function(ServerRequestInterface $request){
-            // now `with*` will return an instnace of the current class
-            return new self($request); 
+            // now `with*` will return an instance of the current class
+            return new self($request);
         });
     }
-    
+
     public function getParsedBody()
     {
         if ($parsed = $this->getMessage()->getParsedBody()) {
             return $parsed;
         }
-        
+
         $decoded = json_decode($this->getBody(), true);
 
         if (json_last_error() == JSON_ERROR_NONE) {
             return $decoded;
         }
-        
+
         return $parsed;
     }
 }

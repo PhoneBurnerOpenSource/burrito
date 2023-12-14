@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhoneBurnerTest\Http\Message\Fixture;
+namespace PhoneBurner\Tests\Http\Message\Fixture;
 
 use PhoneBurner\Http\Message\UriWrapper;
 use Psr\Http\Message\UriInterface;
@@ -11,9 +11,9 @@ class UriWrapperFixture implements UriInterface
 {
     use UriWrapper;
 
-    public function __construct(UriInterface $uri = null, callable $factory = null)
+    public function __construct(UriInterface|null $uri = null, callable|null $factory = null)
     {
-        if (null !== $uri) {
+        if ($uri instanceof UriInterface) {
             $this->setWrapped($uri);
         }
 

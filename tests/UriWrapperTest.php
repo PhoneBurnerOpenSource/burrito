@@ -2,23 +2,55 @@
 
 declare(strict_types=1);
 
-namespace PhoneBurnerTest\Http\Message;
+namespace PhoneBurner\Tests\Http\Message;
 
-use PhoneBurnerTest\Http\Message\Fixture\UriWrapperFixture;
+use PhoneBurner\Tests\Http\Message\Fixture\UriWrapperFixture;
+use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Http\Message\UriInterface;
 
 class UriWrapperTest extends EvolvingWrapperTestCase
 {
-    protected const WRAPPED_CLASS = UriInterface::class;
-    protected const FIXTURE_CLASS = UriWrapperFixture::class;
+    /**
+     * @var ObjectProphecy<UriInterface>
+     */
+    private ObjectProphecy $mocked_wrapped;
 
-    public function provideAllMethods(): iterable
+    protected function setUp(): void
     {
-        yield from $this->provideWithMethods();
-        yield from $this->provideGetterMethods();
+        $this->mocked_wrapped = $this->prophesize(UriInterface::class);
     }
 
-    public function provideGetterMethods(): iterable
+    /**
+     * @return ObjectProphecy<UriInterface>
+     */
+    protected function mock(): ObjectProphecy
+    {
+        return $this->mocked_wrapped;
+    }
+
+    /**
+     * @return class-string<UriInterface>
+     */
+    public static function wrapped(): string
+    {
+        return UriInterface::class;
+    }
+
+    /**
+     * @return class-string<UriWrapperFixture>
+     */
+    public static function fixture(): string
+    {
+        return UriWrapperFixture::class;
+    }
+
+    public static function provideAllMethods(): iterable
+    {
+        yield from self::provideWithMethods();
+        yield from self::provideGetterMethods();
+    }
+
+    public static function provideGetterMethods(): iterable
     {
         yield "getScheme" => ['getScheme', [], 'http'];
         yield "getAuthority (none)" => ['getAuthority', [], ''];
@@ -33,7 +65,7 @@ class UriWrapperTest extends EvolvingWrapperTestCase
         yield "__toString" => ['__toString', [], 'http://example.com/test'];
     }
 
-    public function provideWithMethods(): iterable
+    public static function provideWithMethods(): iterable
     {
         yield "withScheme" => ['withScheme', ['https']];
         yield "withUserInfo (user only)" => ['withUserInfo', ['nopass', null]];

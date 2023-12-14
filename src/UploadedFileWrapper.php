@@ -9,20 +9,17 @@ use Psr\Http\Message\UploadedFileInterface;
 
 trait UploadedFileWrapper
 {
-    private $wrapped;
+    private UploadedFileInterface|null $wrapped = null;
 
-    private function setWrapped(UploadedFileInterface $file): void
+    private function setWrapped(UploadedFileInterface $file): static
     {
         $this->wrapped = $file;
+        return $this;
     }
 
     private function getWrapped(): UploadedFileInterface
     {
-        if (!($this->wrapped instanceof UploadedFileInterface)) {
-            throw new \UnexpectedValueException('must `setUploadedFile` before using it');
-        }
-
-        return $this->wrapped;
+        return $this->wrapped ?? throw new \UnexpectedValueException('must set wrapped uploaded file first');
     }
 
     public function getStream(): StreamInterface
@@ -30,12 +27,12 @@ trait UploadedFileWrapper
         return $this->getWrapped()->getStream();
     }
 
-    public function moveTo($targetPath): void
+    public function moveTo(string $targetPath): void
     {
         $this->getWrapped()->moveTo($targetPath);
     }
 
-    public function getSize(): ?int
+    public function getSize(): int|null
     {
         return $this->getWrapped()->getSize();
     }
@@ -45,12 +42,12 @@ trait UploadedFileWrapper
         return $this->getWrapped()->getError();
     }
 
-    public function getClientFilename(): ?string
+    public function getClientFilename(): string|null
     {
         return $this->getWrapped()->getClientFilename();
     }
 
-    public function getClientMediaType(): ?string
+    public function getClientMediaType(): string|null
     {
         return $this->getWrapped()->getClientMediaType();
     }
