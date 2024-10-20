@@ -63,7 +63,32 @@ abstract class WrapperTestCase extends TestCase
         $expected ??= $args;
 
         $this->mock()->$method(...$expected)->willReturn($return);
-        $sut = new (static::fixture())($this->mock()->reveal());
+        $sut = new (static::fixture())(
+            wrapped: $this->mock()->reveal(),
+        );
         self::assertSame($return, $sut->$method(...$args));
+    }
+
+    #[Test]
+    public function setWrappedFactoryAcceptsCallable(): void
+    {
+        $one_time = function () {
+            static $called = false;
+            if ($called) {
+                throw new \RuntimeException('Factory callable can only be called once.');
+            }
+
+            $called = true;
+            return $this->mock()->reveal();
+        };
+
+        $sut = new (static::fixture())(
+            factory: $one_time,
+        );
+
+        // @phpstan-ignore-next-line
+        self::assertSame($this->mock()->reveal(), $sut->getWrapped());
+        // @phpstan-ignore-next-line
+        self::assertSame($this->mock()->reveal(), $sut->getWrapped());
     }
 }

@@ -117,7 +117,7 @@ Rector is also used to enforce code quality and standards
 make phpcs
 
 # Attempt to auto-fix coding standards issues
-make phpbf
+make phpcbf
 
 # Run Rector with project configuration
 make rector

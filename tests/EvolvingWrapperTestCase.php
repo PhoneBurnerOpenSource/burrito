@@ -6,8 +6,6 @@ namespace PhoneBurner\Tests\Http\Message;
 
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Test;
-use PHPUnit\Framework\MockObject\Stub;
-use PHPUnit\Framework\TestCase;
 
 abstract class EvolvingWrapperTestCase extends WrapperTestCase
 {
@@ -27,36 +25,26 @@ abstract class EvolvingWrapperTestCase extends WrapperTestCase
             $expected = $args;
         }
 
+        // with methods return a new instance, so stub one
         $return = self::createStub(static::wrapped());
 
+        // the initial wrapped instance should be called, and return the new
+        // stub as it evolves the message
         $this->mock()->$method(...$expected)->willReturn($return)->shouldBeCalled();
+
+        // create a wrapper of the initial instance
         $sut = new (static::fixture())($this->mock()->reveal());
-        self::assertSame($sut, $sut->$method(...$args));
-    }
 
-    #[Test]
-    #[DataProvider('provideWithMethods')]
-    public function withMethodsUseFactoryWhenProvided(
-        string $method,
-        array $args,
-        array|null $expected = null,
-    ): void {
-        // allow expected args to differ from the args we pass the wrapper
-        // but if they're not defined, they are the same as what is passed to
-        // the wrapper
-        $expected ??= $args;
+        // evolve the message
+        $evolved = $sut->$method(...$args);
 
-        $return = self::createStub(static::wrapped());
+        // the returned wrapper should be wrapping the new object
+        self::assertSame($return, $evolved->getWrapped());
 
-        $wrapped = self::createStub(static::fixture());
-
-        $this->mock()->$method(...$expected)->willReturn($return)->shouldBeCalled();
-
-        $sut = new (static::fixture())($this->mock()->reveal(), static function ($message) use ($return, $wrapped): Stub {
-            TestCase::assertSame($return, $message);
-            return $wrapped;
-        });
-
-        self::assertSame($wrapped, $sut->$method(...$args));
+        // all of our fixtures preserve a new instance of the wrapper as well
+        self::assertNotSame($sut, $evolved);
+        // and the original wrapper should still wrap the initial instance
+        // @phpstan-ignore-next-line
+        self::assertSame($this->mock()->reveal(), $sut->getWrapped());
     }
 }

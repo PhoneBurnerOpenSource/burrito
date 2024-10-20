@@ -6,28 +6,16 @@ namespace PhoneBurner\Http\Message;
 
 use Psr\Http\Message\UriInterface;
 
+/**
+ * @phpstan-require-implements UriInterface
+ */
 trait UriWrapper
 {
     private UriInterface|null $wrapped = null;
 
     private \Closure|null $factory = null;
 
-    /**
-     * @param callable(UriInterface): static $factory
-     */
-    protected function setFactory(callable $factory): static
-    {
-        $this->factory = $factory(...);
-        return $this;
-    }
-
-    /**
-     * @return static&UriInterface
-     */
-    private function viaFactory(UriInterface $uri): static
-    {
-        return $this->factory ? ($this->factory)($uri) : $this->setWrapped($uri);
-    }
+    abstract protected function wrap(UriInterface $uri): static;
 
     protected function setWrapped(UriInterface $uri): static
     {
@@ -35,9 +23,17 @@ trait UriWrapper
         return $this;
     }
 
-    private function getWrapped(): UriInterface
+    protected function setWrappedFactory(callable $factory): void
     {
-        return $this->wrapped ?: throw new \UnexpectedValueException('must set wrapped uri first');
+        $this->factory = $factory instanceof \Closure ? $factory : $factory(...);
+    }
+
+    public function getWrapped(): UriInterface
+    {
+        return $this->wrapped ??=
+            $this->factory instanceof \Closure
+                ? ($this->factory)()
+                : throw new \UnexpectedValueException('must set wrapped uri first');
     }
 
     public function getScheme(): string
@@ -85,7 +81,7 @@ trait UriWrapper
      */
     public function withScheme(string $scheme): UriInterface
     {
-        return $this->viaFactory($this->getWrapped()->withScheme($scheme));
+        return $this->wrap($this->getWrapped()->withScheme($scheme));
     }
 
     /**
@@ -93,7 +89,7 @@ trait UriWrapper
      */
     public function withUserInfo(string $user, string|null $password = null): UriInterface
     {
-        return $this->viaFactory($this->getWrapped()->withUserInfo($user, $password));
+        return $this->wrap($this->getWrapped()->withUserInfo($user, $password));
     }
 
     /**
@@ -101,7 +97,7 @@ trait UriWrapper
      */
     public function withHost(string $host): UriInterface
     {
-        return $this->viaFactory($this->getWrapped()->withHost($host));
+        return $this->wrap($this->getWrapped()->withHost($host));
     }
 
     /**
@@ -109,7 +105,7 @@ trait UriWrapper
      */
     public function withPort(int|null $port): UriInterface
     {
-        return $this->viaFactory($this->getWrapped()->withPort($port));
+        return $this->wrap($this->getWrapped()->withPort($port));
     }
 
     /**
@@ -117,7 +113,7 @@ trait UriWrapper
      */
     public function withPath(string $path): UriInterface
     {
-        return $this->viaFactory($this->getWrapped()->withPath($path));
+        return $this->wrap($this->getWrapped()->withPath($path));
     }
 
     /**
@@ -125,7 +121,7 @@ trait UriWrapper
      */
     public function withQuery(string $query): UriInterface
     {
-        return $this->viaFactory($this->getWrapped()->withQuery($query));
+        return $this->wrap($this->getWrapped()->withQuery($query));
     }
 
     /**
@@ -133,7 +129,7 @@ trait UriWrapper
      */
     public function withFragment(string $fragment): UriInterface
     {
-        return $this->viaFactory($this->getWrapped()->withFragment($fragment));
+        return $this->wrap($this->getWrapped()->withFragment($fragment));
     }
 
     public function __toString(): string

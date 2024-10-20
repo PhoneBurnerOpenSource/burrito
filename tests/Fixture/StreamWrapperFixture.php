@@ -11,10 +11,14 @@ class StreamWrapperFixture implements StreamInterface
 {
     use StreamWrapper;
 
-    public function __construct(StreamInterface|null $stream = null)
+    public function __construct(StreamInterface|null $wrapped = null, callable|null $factory = null)
     {
-        if ($stream instanceof StreamInterface) {
-            $this->setWrapped($stream);
+        if ($wrapped instanceof StreamInterface) {
+            $this->setWrapped($wrapped);
+        }
+
+        if ($factory !== null) {
+            $this->setWrappedFactory($factory);
         }
     }
 }

@@ -8,6 +8,9 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
 
+/**
+ * @phpstan-require-implements ServerRequestInterface
+ */
 trait ServerRequestWrapper
 {
     private ServerRequestInterface|null $wrapped = null;
@@ -15,21 +18,9 @@ trait ServerRequestWrapper
     private \Closure|null $factory = null;
 
     /**
-     * @param callable(ServerRequestInterface): static $factory
-     */
-    protected function setFactory(callable $factory): static
-    {
-        $this->factory = $factory(...);
-        return $this;
-    }
-
-    /**
      * @return static&ServerRequestInterface
      */
-    private function viaFactory(ServerRequestInterface $message): static
-    {
-        return $this->factory ? ($this->factory)($message) : $this->setWrapped($message);
-    }
+    abstract protected function wrap(ServerRequestInterface $server_request): static;
 
     protected function setWrapped(ServerRequestInterface $message): static
     {
@@ -37,9 +28,17 @@ trait ServerRequestWrapper
         return $this;
     }
 
-    private function getWrapped(): ServerRequestInterface
+    protected function setWrappedFactory(callable $factory): void
     {
-        return $this->wrapped ?? throw new \UnexpectedValueException('must set wrapped server request first');
+        $this->factory = $factory instanceof \Closure ? $factory : $factory(...);
+    }
+
+    public function getWrapped(): ServerRequestInterface
+    {
+        return $this->wrapped ??=
+            $this->factory instanceof \Closure
+                ? ($this->factory)()
+                : throw new \UnexpectedValueException('must set wrapped server request first');
     }
 
     public function getProtocolVersion(): string
@@ -49,7 +48,7 @@ trait ServerRequestWrapper
 
     public function withProtocolVersion(string $version): ServerRequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withProtocolVersion($version));
+        return $this->wrap($this->getWrapped()->withProtocolVersion($version));
     }
 
     public function getHeaders(): array
@@ -78,7 +77,7 @@ trait ServerRequestWrapper
      */
     public function withHeader(string $name, mixed $value): ServerRequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withHeader($name, $value));
+        return $this->wrap($this->getWrapped()->withHeader($name, $value));
     }
 
     /**
@@ -87,7 +86,7 @@ trait ServerRequestWrapper
      */
     public function withAddedHeader(string $name, mixed $value): ServerRequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withAddedHeader($name, $value));
+        return $this->wrap($this->getWrapped()->withAddedHeader($name, $value));
     }
 
     /**
@@ -95,7 +94,7 @@ trait ServerRequestWrapper
      */
     public function withoutHeader(string $name): ServerRequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withoutHeader($name));
+        return $this->wrap($this->getWrapped()->withoutHeader($name));
     }
 
     public function getBody(): StreamInterface
@@ -108,7 +107,7 @@ trait ServerRequestWrapper
      */
     public function withBody(StreamInterface $body): ServerRequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withBody($body));
+        return $this->wrap($this->getWrapped()->withBody($body));
     }
 
     public function getRequestTarget(): string
@@ -121,7 +120,7 @@ trait ServerRequestWrapper
      */
     public function withRequestTarget(string $requestTarget): ServerRequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withRequestTarget($requestTarget));
+        return $this->wrap($this->getWrapped()->withRequestTarget($requestTarget));
     }
 
     public function getMethod(): string
@@ -134,7 +133,7 @@ trait ServerRequestWrapper
      */
     public function withMethod(string $method): ServerRequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withMethod($method));
+        return $this->wrap($this->getWrapped()->withMethod($method));
     }
 
     public function getUri(): UriInterface
@@ -147,7 +146,7 @@ trait ServerRequestWrapper
      */
     public function withUri(UriInterface $uri, bool $preserveHost = false): ServerRequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withUri($uri, $preserveHost));
+        return $this->wrap($this->getWrapped()->withUri($uri, $preserveHost));
     }
 
     public function getServerParams(): array
@@ -165,7 +164,7 @@ trait ServerRequestWrapper
      */
     public function withCookieParams(array $cookies): ServerRequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withCookieParams($cookies));
+        return $this->wrap($this->getWrapped()->withCookieParams($cookies));
     }
 
     public function getQueryParams(): array
@@ -178,7 +177,7 @@ trait ServerRequestWrapper
      */
     public function withQueryParams(array $query): ServerRequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withQueryParams($query));
+        return $this->wrap($this->getWrapped()->withQueryParams($query));
     }
 
     public function getUploadedFiles(): array
@@ -191,7 +190,7 @@ trait ServerRequestWrapper
      */
     public function withUploadedFiles(array $uploadedFiles): ServerRequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withUploadedFiles($uploadedFiles));
+        return $this->wrap($this->getWrapped()->withUploadedFiles($uploadedFiles));
     }
 
     public function getParsedBody(): array|object|null
@@ -204,7 +203,7 @@ trait ServerRequestWrapper
      */
     public function withParsedBody(mixed $data): ServerRequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withParsedBody($data));
+        return $this->wrap($this->getWrapped()->withParsedBody($data));
     }
 
     public function getAttributes(): array
@@ -222,7 +221,7 @@ trait ServerRequestWrapper
      */
     public function withAttribute(string $name, mixed $value): ServerRequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withAttribute($name, $value));
+        return $this->wrap($this->getWrapped()->withAttribute($name, $value));
     }
 
     /**
@@ -230,6 +229,6 @@ trait ServerRequestWrapper
      */
     public function withoutAttribute(string $name): ServerRequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withoutAttribute($name));
+        return $this->wrap($this->getWrapped()->withoutAttribute($name));
     }
 }

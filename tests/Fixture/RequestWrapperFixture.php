@@ -7,18 +7,23 @@ namespace PhoneBurner\Tests\Http\Message\Fixture;
 use PhoneBurner\Http\Message\RequestWrapper;
 use Psr\Http\Message\RequestInterface;
 
-class RequestWrapperFixture implements RequestInterface
+final class RequestWrapperFixture implements RequestInterface
 {
     use RequestWrapper;
 
-    public function __construct(RequestInterface|null $request = null, callable|null $factory = null)
+    protected function wrap(RequestInterface $message): static
     {
-        if ($request instanceof RequestInterface) {
-            $this->setWrapped($request);
+        return new self($message);
+    }
+
+    public function __construct(RequestInterface|null $wrapped = null, callable|null $factory = null)
+    {
+        if ($wrapped instanceof RequestInterface) {
+            $this->setWrapped($wrapped);
         }
 
-        if (null !== $factory) {
-            $this->setFactory($factory);
+        if ($factory !== null) {
+            $this->setWrappedFactory($factory);
         }
     }
 }

@@ -8,28 +8,16 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UriInterface;
 
+/**
+ * @phpstan-require-implements RequestInterface
+ */
 trait RequestWrapper
 {
     private RequestInterface|null $wrapped = null;
 
     private \Closure|null $factory = null;
 
-    /**
-     * @param callable(RequestInterface): static $factory
-     */
-    protected function setFactory(callable $factory): static
-    {
-        $this->factory = $factory(...);
-        return $this;
-    }
-
-    /**
-     * @return static&RequestInterface
-     */
-    private function viaFactory(RequestInterface $message): static
-    {
-        return $this->factory ? ($this->factory)($message) : $this->setWrapped($message);
-    }
+    abstract protected function wrap(RequestInterface $message): static;
 
     protected function setWrapped(RequestInterface $message): static
     {
@@ -37,9 +25,17 @@ trait RequestWrapper
         return $this;
     }
 
-    private function getWrapped(): RequestInterface
+    protected function setWrappedFactory(callable $factory): void
     {
-        return $this->wrapped ?? throw new \UnexpectedValueException('must set wrapped request first');
+        $this->factory = $factory instanceof \Closure ? $factory : $factory(...);
+    }
+
+    public function getWrapped(): RequestInterface
+    {
+        return $this->wrapped ??=
+            $this->factory instanceof \Closure
+                ? ($this->factory)()
+                : throw new \UnexpectedValueException('must set wrapped request first');
     }
 
     public function getProtocolVersion(): string
@@ -52,7 +48,7 @@ trait RequestWrapper
      */
     public function withProtocolVersion(string $version): RequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withProtocolVersion($version));
+        return $this->wrap($this->getWrapped()->withProtocolVersion($version));
     }
 
     public function getHeaders(): array
@@ -81,7 +77,7 @@ trait RequestWrapper
      */
     public function withHeader(string $name, mixed $value): RequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withHeader($name, $value));
+        return $this->wrap($this->getWrapped()->withHeader($name, $value));
     }
 
     /**
@@ -90,7 +86,7 @@ trait RequestWrapper
      */
     public function withAddedHeader(string $name, mixed $value): RequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withAddedHeader($name, $value));
+        return $this->wrap($this->getWrapped()->withAddedHeader($name, $value));
     }
 
     /**
@@ -98,7 +94,7 @@ trait RequestWrapper
      */
     public function withoutHeader(string $name): RequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withoutHeader($name));
+        return $this->wrap($this->getWrapped()->withoutHeader($name));
     }
 
     public function getBody(): StreamInterface
@@ -111,7 +107,7 @@ trait RequestWrapper
      */
     public function withBody(StreamInterface $body): RequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withBody($body));
+        return $this->wrap($this->getWrapped()->withBody($body));
     }
 
     public function getRequestTarget(): string
@@ -124,7 +120,7 @@ trait RequestWrapper
      */
     public function withRequestTarget(string $requestTarget): RequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withRequestTarget($requestTarget));
+        return $this->wrap($this->getWrapped()->withRequestTarget($requestTarget));
     }
 
     public function getMethod(): string
@@ -137,7 +133,7 @@ trait RequestWrapper
      */
     public function withMethod(string $method): RequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withMethod($method));
+        return $this->wrap($this->getWrapped()->withMethod($method));
     }
 
     public function getUri(): UriInterface
@@ -150,6 +146,6 @@ trait RequestWrapper
      */
     public function withUri(UriInterface $uri, bool $preserveHost = false): RequestInterface
     {
-        return $this->viaFactory($this->getWrapped()->withUri($uri, $preserveHost));
+        return $this->wrap($this->getWrapped()->withUri($uri, $preserveHost));
     }
 }

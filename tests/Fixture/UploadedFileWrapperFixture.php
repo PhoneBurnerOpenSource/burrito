@@ -11,10 +11,14 @@ class UploadedFileWrapperFixture implements UploadedFileInterface
 {
     use UploadedFileWrapper;
 
-    public function __construct(UploadedFileInterface|null $file = null)
+    public function __construct(UploadedFileInterface|null $wrapped = null, callable|null $factory = null)
     {
-        if ($file instanceof UploadedFileInterface) {
-            $this->setWrapped($file);
+        if ($wrapped instanceof UploadedFileInterface) {
+            $this->setWrapped($wrapped);
+        }
+
+        if ($factory !== null) {
+            $this->setWrappedFactory($factory);
         }
     }
 }

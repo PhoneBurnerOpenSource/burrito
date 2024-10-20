@@ -6,9 +6,14 @@ namespace PhoneBurner\Http\Message;
 
 use Psr\Http\Message\StreamInterface;
 
+/**
+ * @phpstan-require-implements StreamInterface
+ */
 trait StreamWrapper
 {
     private StreamInterface|null $wrapped = null;
+
+    private \Closure|null $factory = null;
 
     protected function setWrapped(StreamInterface $stream): static
     {
@@ -16,9 +21,16 @@ trait StreamWrapper
         return $this;
     }
 
-    private function getWrapped(): StreamInterface
+    protected function setWrappedFactory(callable $factory): void
     {
-        return $this->wrapped ?? throw new \UnexpectedValueException('must set wrapped stream first');
+        $this->factory = $factory instanceof \Closure ? $factory : $factory(...);
+    }
+
+    public function getWrapped(): StreamInterface
+    {
+        return $this->wrapped ??= $this->factory instanceof \Closure
+            ? ($this->factory)()
+            : throw new \UnexpectedValueException('must set wrapped stream first');
     }
 
     public function __toString(): string

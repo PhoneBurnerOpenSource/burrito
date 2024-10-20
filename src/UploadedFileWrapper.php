@@ -7,9 +7,14 @@ namespace PhoneBurner\Http\Message;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UploadedFileInterface;
 
+/**
+ * @phpstan-require-implements UploadedFileInterface
+ */
 trait UploadedFileWrapper
 {
     private UploadedFileInterface|null $wrapped = null;
+
+    private \Closure|null $factory = null;
 
     private function setWrapped(UploadedFileInterface $file): static
     {
@@ -17,9 +22,17 @@ trait UploadedFileWrapper
         return $this;
     }
 
-    private function getWrapped(): UploadedFileInterface
+    protected function setWrappedFactory(callable $factory): void
     {
-        return $this->wrapped ?? throw new \UnexpectedValueException('must set wrapped uploaded file first');
+        $this->factory = $factory instanceof \Closure ? $factory : $factory(...);
+    }
+
+    public function getWrapped(): UploadedFileInterface
+    {
+        return $this->wrapped ??=
+            $this->factory instanceof \Closure
+                ? ($this->factory)()
+                : throw new \UnexpectedValueException('must set wrapped message first');
     }
 
     public function getStream(): StreamInterface

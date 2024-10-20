@@ -7,38 +7,34 @@ namespace PhoneBurner\Http\Message;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 
+/**
+ * @phpstan-require-implements ResponseInterface
+ */
 trait ResponseWrapper
 {
     private ResponseInterface|null $wrapped = null;
 
     private \Closure|null $factory = null;
 
-    /**
-     * @param callable(ResponseInterface): static $factory
-     */
-    protected function setFactory(callable $factory): void
+    abstract protected function wrap(ResponseInterface $response): static;
+
+    protected function setWrapped(ResponseInterface $response): static
+    {
+        $this->wrapped = $response;
+        return $this;
+    }
+
+    protected function setWrappedFactory(callable $factory): void
     {
         $this->factory = $factory instanceof \Closure ? $factory : $factory(...);
     }
 
-    /**
-     * @return static&ResponseInterface
-     */
-    private function viaFactory(ResponseInterface $response): static
+    public function getWrapped(): ResponseInterface
     {
-        $this->factory ??= $this->setWrapped(...);
-        return ($this->factory)($response);
-    }
-
-    protected function setWrapped(ResponseInterface $message): static
-    {
-        $this->wrapped = $message;
-        return $this;
-    }
-
-    private function getWrapped(): ResponseInterface
-    {
-        return $this->wrapped ?? throw new \UnexpectedValueException('must set wrapped response first');
+        return $this->wrapped ??=
+            $this->factory instanceof \Closure
+                ? ($this->factory)()
+                : throw new \UnexpectedValueException('must set response message first');
     }
 
     public function getProtocolVersion(): string
@@ -51,7 +47,7 @@ trait ResponseWrapper
      */
     public function withProtocolVersion(string $version): ResponseInterface
     {
-        return $this->viaFactory($this->getWrapped()->withProtocolVersion($version));
+        return $this->wrap($this->getWrapped()->withProtocolVersion($version));
     }
 
     public function getHeaders(): array
@@ -80,7 +76,7 @@ trait ResponseWrapper
      */
     public function withHeader(string $name, mixed $value): ResponseInterface
     {
-        return $this->viaFactory($this->getWrapped()->withHeader($name, $value));
+        return $this->wrap($this->getWrapped()->withHeader($name, $value));
     }
 
     /**
@@ -89,7 +85,7 @@ trait ResponseWrapper
      */
     public function withAddedHeader(string $name, mixed $value): ResponseInterface
     {
-        return $this->viaFactory($this->getWrapped()->withAddedHeader($name, $value));
+        return $this->wrap($this->getWrapped()->withAddedHeader($name, $value));
     }
 
     /**
@@ -97,7 +93,7 @@ trait ResponseWrapper
      */
     public function withoutHeader(string $name): ResponseInterface
     {
-        return $this->viaFactory($this->getWrapped()->withoutHeader($name));
+        return $this->wrap($this->getWrapped()->withoutHeader($name));
     }
 
     public function getBody(): StreamInterface
@@ -110,7 +106,7 @@ trait ResponseWrapper
      */
     public function withBody(StreamInterface $body): ResponseInterface
     {
-        return $this->viaFactory($this->getWrapped()->withBody($body));
+        return $this->wrap($this->getWrapped()->withBody($body));
     }
 
     public function getStatusCode(): int
@@ -123,7 +119,7 @@ trait ResponseWrapper
      */
     public function withStatus(int $code, string $reasonPhrase = ''): ResponseInterface
     {
-        return $this->viaFactory($this->getWrapped()->withStatus($code, $reasonPhrase));
+        return $this->wrap($this->getWrapped()->withStatus($code, $reasonPhrase));
     }
 
     public function getReasonPhrase(): string
