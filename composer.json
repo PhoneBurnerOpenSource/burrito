@@ -3,7 +3,14 @@
     "description": "Set of traits that make wrapping PSR-7 objects easier.",
     "type": "library",
     "license": "MIT",
-    "keywords": ["psr", "psr-7", "http", "http-message", "request", "response"],
+    "keywords": [
+        "psr",
+        "psr-7",
+        "http",
+        "http-message",
+        "request",
+        "response"
+    ],
     "authors": [
         {
             "name": "Tim Lytle",
@@ -11,14 +18,17 @@
         }
     ],
     "require": {
-        "php": "^7.4 || ^8.0",
-        "psr/http-message": "^1.0"
+        "php": "~8.2.0 || ~8.3.0 || ~8.4.0",
+        "psr/http-message": "^1.1 || ^2.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^9",
-        "phpspec/prophecy-phpunit": "^2.0",
-        "squizlabs/php_codesniffer": "3.*",
-        "escapestudios/symfony2-coding-standard": "^3.9"
+        "phpspec/prophecy-phpunit": "^2.2",
+        "phpstan/phpstan": "^1.12.6",
+        "phpstan/phpstan-phpunit": "^1.4",
+        "phpunit/phpunit": "^11.4.1",
+        "rector/rector": "^1.2.7",
+        "slevomat/coding-standard": "^8.15",
+        "squizlabs/php_codesniffer": "^3.10.3"
     },
     "autoload": {
         "psr-4": {
@@ -27,7 +37,26 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "PhoneBurnerTest\\Http\\Message\\": "test/"
+            "PhoneBurner\\Tests\\Http\\Message\\": "tests/"
         }
+    },
+    "scripts": {
+        "phpcbf": "php vendor/bin/phpcbf --report=full",
+        "phpcs": "php vendor/bin/phpcs --report=full",
+        "phpstan": "php vendor/bin/phpstan analyze --memory-limit=-1",
+        "phpunit": "XDEBUG_MODE=coverage php vendor/bin/phpunit --coverage-text",
+        "rector": "php vendor/bin/rector process",
+        "ci": [
+            "@phpcs",
+            "@phpunit",
+            "@phpstan",
+            "php vendor/bin/rector process --dry-run"
+        ]
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "sort-packages": true
     }
 }

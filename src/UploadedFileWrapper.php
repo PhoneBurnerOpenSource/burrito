@@ -7,22 +7,32 @@ namespace PhoneBurner\Http\Message;
 use Psr\Http\Message\StreamInterface;
 use Psr\Http\Message\UploadedFileInterface;
 
+/**
+ * @phpstan-require-implements UploadedFileInterface
+ */
 trait UploadedFileWrapper
 {
-    private $wrapped;
+    private UploadedFileInterface|null $wrapped = null;
 
-    private function setWrapped(UploadedFileInterface $file): void
+    private \Closure|null $factory = null;
+
+    private function setWrapped(UploadedFileInterface $file): static
     {
         $this->wrapped = $file;
+        return $this;
     }
 
-    private function getWrapped(): UploadedFileInterface
+    protected function setWrappedFactory(callable $factory): void
     {
-        if (!($this->wrapped instanceof UploadedFileInterface)) {
-            throw new \UnexpectedValueException('must `setUploadedFile` before using it');
-        }
+        $this->factory = $factory instanceof \Closure ? $factory : $factory(...);
+    }
 
-        return $this->wrapped;
+    public function getWrapped(): UploadedFileInterface
+    {
+        return $this->wrapped ??=
+            $this->factory instanceof \Closure
+                ? ($this->factory)()
+                : throw new \UnexpectedValueException('must set wrapped message first');
     }
 
     public function getStream(): StreamInterface
@@ -30,12 +40,12 @@ trait UploadedFileWrapper
         return $this->getWrapped()->getStream();
     }
 
-    public function moveTo($targetPath): void
+    public function moveTo(string $targetPath): void
     {
         $this->getWrapped()->moveTo($targetPath);
     }
 
-    public function getSize(): ?int
+    public function getSize(): int|null
     {
         return $this->getWrapped()->getSize();
     }
@@ -45,12 +55,12 @@ trait UploadedFileWrapper
         return $this->getWrapped()->getError();
     }
 
-    public function getClientFilename(): ?string
+    public function getClientFilename(): string|null
     {
         return $this->getWrapped()->getClientFilename();
     }
 
-    public function getClientMediaType(): ?string
+    public function getClientMediaType(): string|null
     {
         return $this->getWrapped()->getClientMediaType();
     }

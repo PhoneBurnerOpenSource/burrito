@@ -5,25 +5,108 @@ declare(strict_types=1);
 namespace PhoneBurner\Http\Message;
 
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamInterface;
 
+/**
+ * @phpstan-require-implements ResponseInterface
+ */
 trait ResponseWrapper
 {
-    use MessageWrapper;
+    private ResponseInterface|null $wrapped = null;
 
-    private $wrapped;
+    private \Closure|null $factory = null;
 
-    protected function setWrapped(ResponseInterface $message): void
+    abstract protected function wrap(ResponseInterface $response): static;
+
+    protected function setWrapped(ResponseInterface $response): static
     {
-        $this->wrapped = $message;
+        $this->wrapped = $response;
+        return $this;
     }
 
-    private function getWrapped(): ResponseInterface
+    protected function setWrappedFactory(callable $factory): void
     {
-        if (!($this->wrapped instanceof ResponseInterface)) {
-            throw new \UnexpectedValueException('must `setRequest` before using it');
-        }
+        $this->factory = $factory instanceof \Closure ? $factory : $factory(...);
+    }
 
-        return $this->wrapped;
+    public function getWrapped(): ResponseInterface
+    {
+        return $this->wrapped ??=
+            $this->factory instanceof \Closure
+                ? ($this->factory)()
+                : throw new \UnexpectedValueException('must set response message first');
+    }
+
+    public function getProtocolVersion(): string
+    {
+        return $this->getWrapped()->getProtocolVersion();
+    }
+
+    /**
+     * @return static&ResponseInterface
+     */
+    public function withProtocolVersion(string $version): ResponseInterface
+    {
+        return $this->wrap($this->getWrapped()->withProtocolVersion($version));
+    }
+
+    public function getHeaders(): array
+    {
+        return $this->getWrapped()->getHeaders();
+    }
+
+    public function hasHeader(string $name): bool
+    {
+        return $this->getWrapped()->hasHeader($name);
+    }
+
+    public function getHeader(string $name): array
+    {
+        return $this->getWrapped()->getHeader($name);
+    }
+
+    public function getHeaderLine(string $name): string
+    {
+        return $this->getWrapped()->getHeaderLine($name);
+    }
+
+    /**
+     * @param string|string[] $value
+     * @return static&ResponseInterface
+     */
+    public function withHeader(string $name, mixed $value): ResponseInterface
+    {
+        return $this->wrap($this->getWrapped()->withHeader($name, $value));
+    }
+
+    /**
+     * @param string|string[] $value
+     * @return static&ResponseInterface
+     */
+    public function withAddedHeader(string $name, mixed $value): ResponseInterface
+    {
+        return $this->wrap($this->getWrapped()->withAddedHeader($name, $value));
+    }
+
+    /**
+     * @return static&ResponseInterface
+     */
+    public function withoutHeader(string $name): ResponseInterface
+    {
+        return $this->wrap($this->getWrapped()->withoutHeader($name));
+    }
+
+    public function getBody(): StreamInterface
+    {
+        return $this->getWrapped()->getBody();
+    }
+
+    /**
+     * @return static&ResponseInterface
+     */
+    public function withBody(StreamInterface $body): ResponseInterface
+    {
+        return $this->wrap($this->getWrapped()->withBody($body));
     }
 
     public function getStatusCode(): int
@@ -31,9 +114,12 @@ trait ResponseWrapper
         return $this->getWrapped()->getStatusCode();
     }
 
-    public function withStatus($code, $reasonPhrase = ''): ResponseInterface
+    /**
+     * @return static&ResponseInterface
+     */
+    public function withStatus(int $code, string $reasonPhrase = ''): ResponseInterface
     {
-        return $this->viaFactory($this->getWrapped()->withStatus($code, $reasonPhrase));
+        return $this->wrap($this->getWrapped()->withStatus($code, $reasonPhrase));
     }
 
     public function getReasonPhrase(): string

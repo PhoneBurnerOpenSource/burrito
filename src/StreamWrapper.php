@@ -6,27 +6,36 @@ namespace PhoneBurner\Http\Message;
 
 use Psr\Http\Message\StreamInterface;
 
+/**
+ * @phpstan-require-implements StreamInterface
+ */
 trait StreamWrapper
 {
-    private $wrapped;
+    private StreamInterface|null $wrapped = null;
 
-    protected function setWrapped(StreamInterface $stream): void
+    private \Closure|null $factory = null;
+
+    protected function setWrapped(StreamInterface $stream): static
     {
         $this->wrapped = $stream;
+        return $this;
     }
 
-    private function getWrapped(): StreamInterface
+    protected function setWrappedFactory(callable $factory): void
     {
-        if (!($this->wrapped instanceof StreamInterface)) {
-            throw new \UnexpectedValueException('must `setUri` before using it');
-        }
+        $this->factory = $factory instanceof \Closure ? $factory : $factory(...);
+    }
 
-        return $this->wrapped;
+    public function getWrapped(): StreamInterface
+    {
+        return $this->wrapped ??= $this->factory instanceof \Closure
+            ? ($this->factory)()
+            : throw new \UnexpectedValueException('must set wrapped stream first');
     }
 
     public function __toString(): string
     {
-        return $this->getWrapped()->__toString();
+        return (string)$this->getWrapped();
     }
 
     public function close(): void
@@ -34,12 +43,12 @@ trait StreamWrapper
         $this->getWrapped()->close();
     }
 
-    public function detach()
+    public function detach(): mixed
     {
         return $this->getWrapped()->detach();
     }
 
-    public function getSize(): ?int
+    public function getSize(): int|null
     {
         return $this->getWrapped()->getSize();
     }
@@ -59,14 +68,14 @@ trait StreamWrapper
         return $this->getWrapped()->isSeekable();
     }
 
-    public function seek($offset, $whence = SEEK_SET)
+    public function seek($offset, $whence = \SEEK_SET): void
     {
-        return $this->getWrapped()->seek($offset, $whence);
+        $this->getWrapped()->seek($offset, $whence);
     }
 
-    public function rewind()
+    public function rewind(): void
     {
-        return $this->getWrapped()->rewind();
+        $this->getWrapped()->rewind();
     }
 
     public function isWritable(): bool
@@ -74,7 +83,7 @@ trait StreamWrapper
         return $this->getWrapped()->isWritable();
     }
 
-    public function write($string): int
+    public function write(string $string): int
     {
         return $this->getWrapped()->write($string);
     }
@@ -84,7 +93,7 @@ trait StreamWrapper
         return $this->getWrapped()->isReadable();
     }
 
-    public function read($length): string
+    public function read(int $length): string
     {
         return $this->getWrapped()->read($length);
     }
@@ -94,7 +103,7 @@ trait StreamWrapper
         return $this->getWrapped()->getContents();
     }
 
-    public function getMetadata($key = null)
+    public function getMetadata($key = null): mixed
     {
         return $this->getWrapped()->getMetadata($key);
     }

@@ -7,37 +7,34 @@ namespace PhoneBurner\Http\Message;
 use Psr\Http\Message\MessageInterface;
 use Psr\Http\Message\StreamInterface;
 
+/**
+ * @phpstan-require-implements MessageInterface
+ */
 trait MessageWrapper
 {
-    private $wrapped;
-    private $factory;
+    private MessageInterface|null $wrapped = null;
 
-    protected function setFactory(callable $factory): void
-    {
-        $this->factory = $factory;
-    }
+    private \Closure|null $factory = null;
 
-    private function viaFactory(MessageInterface $message): MessageInterface
-    {
-        if (!$this->factory) {
-            return $message;
-        }
+    abstract protected function wrap(MessageInterface $message): static;
 
-        return call_user_func($this->factory, $message);
-    }
-
-    protected function setWrapped(MessageInterface $message): void
+    protected function setWrapped(MessageInterface $message): static
     {
         $this->wrapped = $message;
+        return $this;
     }
 
-    private function getWrapped(): MessageInterface
+    protected function setWrappedFactory(callable $factory): void
     {
-        if (!($this->wrapped instanceof MessageInterface)) {
-            throw new \UnexpectedValueException('must `setMessage` before using it');
-        }
+        $this->factory = $factory instanceof \Closure ? $factory : $factory(...);
+    }
 
-        return $this->wrapped;
+    public function getWrapped(): MessageInterface
+    {
+        return $this->wrapped ??=
+            $this->factory instanceof \Closure
+                ? ($this->factory)()
+                : throw new \UnexpectedValueException('must set wrapped message first');
     }
 
     public function getProtocolVersion(): string
@@ -45,9 +42,12 @@ trait MessageWrapper
         return $this->getWrapped()->getProtocolVersion();
     }
 
-    public function withProtocolVersion($version): MessageInterface
+    /**
+     * @return static&MessageInterface
+     */
+    public function withProtocolVersion(string $version): MessageInterface
     {
-        return $this->viaFactory($this->getWrapped()->withProtocolVersion($version));
+        return $this->wrap($this->getWrapped()->withProtocolVersion($version));
     }
 
     public function getHeaders(): array
@@ -55,34 +55,45 @@ trait MessageWrapper
         return $this->getWrapped()->getHeaders();
     }
 
-    public function hasHeader($name): bool
+    public function hasHeader(string $name): bool
     {
         return $this->getWrapped()->hasHeader($name);
     }
 
-    public function getHeader($name): array
+    public function getHeader(string $name): array
     {
         return $this->getWrapped()->getHeader($name);
     }
 
-    public function getHeaderLine($name): string
+    public function getHeaderLine(string $name): string
     {
         return $this->getWrapped()->getHeaderLine($name);
     }
 
-    public function withHeader($name, $value): MessageInterface
+    /**
+     * @param string|string[] $value
+     * @return static&MessageInterface
+     */
+    public function withHeader(string $name, mixed $value): MessageInterface
     {
-        return $this->viaFactory($this->getWrapped()->withHeader($name, $value));
+        return $this->wrap($this->getWrapped()->withHeader($name, $value));
     }
 
-    public function withAddedHeader($name, $value): MessageInterface
+    /**
+     * @param string|string[] $value
+     * @return static&MessageInterface
+     */
+    public function withAddedHeader(string $name, mixed $value): MessageInterface
     {
-        return $this->viaFactory($this->getWrapped()->withAddedHeader($name, $value));
+        return $this->wrap($this->getWrapped()->withAddedHeader($name, $value));
     }
 
-    public function withoutHeader($name): MessageInterface
+    /**
+     * @return static&MessageInterface
+     */
+    public function withoutHeader(string $name): MessageInterface
     {
-        return $this->viaFactory($this->getWrapped()->withoutHeader($name));
+        return $this->wrap($this->getWrapped()->withoutHeader($name));
     }
 
     public function getBody(): StreamInterface
@@ -90,8 +101,11 @@ trait MessageWrapper
         return $this->getWrapped()->getBody();
     }
 
+    /**
+     * @return static&MessageInterface
+     */
     public function withBody(StreamInterface $body): MessageInterface
     {
-        return $this->viaFactory($this->getWrapped()->withBody($body));
+        return $this->wrap($this->getWrapped()->withBody($body));
     }
 }

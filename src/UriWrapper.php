@@ -6,37 +6,34 @@ namespace PhoneBurner\Http\Message;
 
 use Psr\Http\Message\UriInterface;
 
+/**
+ * @phpstan-require-implements UriInterface
+ */
 trait UriWrapper
 {
-    private $wrapped;
-    private $factory;
+    private UriInterface|null $wrapped = null;
 
-    protected function setFactory(callable $factory): void
-    {
-        $this->factory = $factory;
-    }
+    private \Closure|null $factory = null;
 
-    private function viaFactory(UriInterface $uri): UriInterface
-    {
-        if (!$this->factory) {
-            return $uri;
-        }
+    abstract protected function wrap(UriInterface $uri): static;
 
-        return call_user_func($this->factory, $uri);
-    }
-
-    protected function setWrapped(UriInterface $uri): void
+    protected function setWrapped(UriInterface $uri): static
     {
         $this->wrapped = $uri;
+        return $this;
     }
 
-    private function getWrapped(): UriInterface
+    protected function setWrappedFactory(callable $factory): void
     {
-        if (!($this->wrapped instanceof UriInterface)) {
-            throw new \UnexpectedValueException('must `setUri` before using it');
-        }
+        $this->factory = $factory instanceof \Closure ? $factory : $factory(...);
+    }
 
-        return $this->wrapped;
+    public function getWrapped(): UriInterface
+    {
+        return $this->wrapped ??=
+            $this->factory instanceof \Closure
+                ? ($this->factory)()
+                : throw new \UnexpectedValueException('must set wrapped uri first');
     }
 
     public function getScheme(): string
@@ -59,7 +56,7 @@ trait UriWrapper
         return $this->getWrapped()->getHost();
     }
 
-    public function getPort(): ?int
+    public function getPort(): int|null
     {
         return $this->getWrapped()->getPort();
     }
@@ -79,43 +76,64 @@ trait UriWrapper
         return $this->getWrapped()->getFragment();
     }
 
-    public function withScheme($scheme): UriInterface
+    /**
+     * @return static&UriInterface
+     */
+    public function withScheme(string $scheme): UriInterface
     {
-        return $this->viaFactory($this->getWrapped()->withScheme($scheme));
+        return $this->wrap($this->getWrapped()->withScheme($scheme));
     }
 
-    public function withUserInfo($user, $password = null): UriInterface
+    /**
+     * @return static&UriInterface
+     */
+    public function withUserInfo(string $user, string|null $password = null): UriInterface
     {
-        return $this->viaFactory($this->getWrapped()->withUserInfo($user, $password));
+        return $this->wrap($this->getWrapped()->withUserInfo($user, $password));
     }
 
-    public function withHost($host): UriInterface
+    /**
+     * @return static&UriInterface
+     */
+    public function withHost(string $host): UriInterface
     {
-        return $this->viaFactory($this->getWrapped()->withHost($host));
+        return $this->wrap($this->getWrapped()->withHost($host));
     }
 
-    public function withPort($port): UriInterface
+    /**
+     * @return static&UriInterface
+     */
+    public function withPort(int|null $port): UriInterface
     {
-        return $this->viaFactory($this->getWrapped()->withPort($port));
+        return $this->wrap($this->getWrapped()->withPort($port));
     }
 
-    public function withPath($path): UriInterface
+    /**
+     * @return static&UriInterface
+     */
+    public function withPath(string $path): UriInterface
     {
-        return $this->viaFactory($this->getWrapped()->withPath($path));
+        return $this->wrap($this->getWrapped()->withPath($path));
     }
 
-    public function withQuery($query): UriInterface
+    /**
+     * @return static&UriInterface
+     */
+    public function withQuery(string $query): UriInterface
     {
-        return $this->viaFactory($this->getWrapped()->withQuery($query));
+        return $this->wrap($this->getWrapped()->withQuery($query));
     }
 
-    public function withFragment($fragment): UriInterface
+    /**
+     * @return static&UriInterface
+     */
+    public function withFragment(string $fragment): UriInterface
     {
-        return $this->viaFactory($this->getWrapped()->withFragment($fragment));
+        return $this->wrap($this->getWrapped()->withFragment($fragment));
     }
 
     public function __toString(): string
     {
-        return $this->getWrapped()->__toString();
+        return (string)$this->getWrapped();
     }
 }

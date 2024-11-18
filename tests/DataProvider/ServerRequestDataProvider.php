@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhoneBurnerTest\Http\Message\DataProvider;
+namespace PhoneBurner\Tests\Http\Message\DataProvider;
 
 use Generator;
 use Psr\Http\Message\UploadedFileInterface;
@@ -14,9 +14,9 @@ trait ServerRequestDataProvider
         provideWithMethods as provideRequestWithMethods;
     }
 
-    public function provideGetterMethods(): Generator
+    public static function provideGetterMethods(): Generator
     {
-        yield from $this->provideRequestGetterMethods();
+        yield from self::provideRequestGetterMethods();
 
         $params = [
             'key' => 'value',
@@ -28,15 +28,15 @@ trait ServerRequestDataProvider
         yield "getQueryParams()" => ['getQueryParams', [], $params];
 
         $files = [
-            'test' => $this->prophesize(UploadedFileInterface::class)->reveal(),
-            'test2' => $this->prophesize(UploadedFileInterface::class)->reveal(),
+            'test' => self::createStub(UploadedFileInterface::class),
+            'test2' => self::createStub(UploadedFileInterface::class),
         ];
 
         yield "getUploadedFiles() => \$files" => ['getUploadedFiles', [], $files];
 
         yield "getParsedBody() => null" => ['getParsedBody', [], null];
         yield "getParsedBody() => \$params" => ['getParsedBody', [], $params];
-        yield "getParsedBody() => (object) \$params" => ['getParsedBody', [], (object) $params];
+        yield "getParsedBody() => (object) \$params" => ['getParsedBody', [], (object)$params];
 
         $attributes = [
             'user' => '1234',
@@ -59,9 +59,9 @@ trait ServerRequestDataProvider
         yield "getAttribute('obj', 'test')" => ['getAttribute', ['user', 'test'], 'test'];
     }
 
-    public function provideWithMethods(): Generator
+    public static function provideWithMethods(): Generator
     {
-        yield from $this->provideRequestWithMethods();
+        yield from self::provideRequestWithMethods();
 
         $params = [
             'key' => 'value',
@@ -72,15 +72,15 @@ trait ServerRequestDataProvider
         yield "withQueryParams(\$params)" => ['withQueryParams', [$params]];
 
         $files = [
-            'test' => $this->prophesize(UploadedFileInterface::class)->reveal(),
-            'test2' => $this->prophesize(UploadedFileInterface::class)->reveal(),
+            'test' => self::createStub(UploadedFileInterface::class),
+            'test2' => self::createStub(UploadedFileInterface::class),
         ];
 
         yield "withUploadedFiles(\$params)" => ['withUploadedFiles', [$files]];
 
         yield "withParsedBody(null)" => ['withParsedBody', [null]];
         yield "withParsedBody(\$params)" => ['withParsedBody', [$params]];
-        yield "withParsedBody((object) \$params)" => ['withParsedBody', [(object) $params]];
+        yield "withParsedBody((object) \$params)" => ['withParsedBody', [(object)$params]];
 
         yield "withAttribute('test', 'value')" => ['withAttribute', ['test', 'value']];
         yield "withoutAttribute('test')" => ['withoutAttribute', ['test']];

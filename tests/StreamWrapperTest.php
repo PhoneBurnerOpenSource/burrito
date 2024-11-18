@@ -2,97 +2,115 @@
 
 declare(strict_types=1);
 
-namespace PhoneBurnerTest\Http\Message;
+namespace PhoneBurner\Tests\Http\Message;
 
-use PhoneBurnerTest\Http\Message\Fixture\StreamWrapperFixture;
+use PhoneBurner\Tests\Http\Message\Fixture\StreamWrapperFixture;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Test;
+use Prophecy\Prophecy\ObjectProphecy;
 use Psr\Http\Message\StreamInterface;
 
 class StreamWrapperTest extends WrapperTestCase
 {
-    protected const WRAPPED_CLASS = StreamInterface::class;
-    protected const FIXTURE_CLASS = StreamWrapperFixture::class;
+    /**
+     * @var ObjectProphecy<StreamInterface>
+     */
+    private ObjectProphecy $mocked_wrapped;
+
+    protected function setUp(): void
+    {
+        $this->mocked_wrapped = $this->prophesize(StreamInterface::class);
+    }
 
     /**
-     * @test
+     * @return ObjectProphecy<StreamInterface>
      */
+    protected function mock(): ObjectProphecy
+    {
+        return $this->mocked_wrapped;
+    }
+
+    /**
+     * @return class-string<StreamInterface>
+     */
+    public static function wrapped(): string
+    {
+        return StreamInterface::class;
+    }
+
+    /**
+     * @return class-string<StreamWrapperFixture>
+     */
+    public static function fixture(): string
+    {
+        return StreamWrapperFixture::class;
+    }
+
+    #[Test]
     public function closeIsProxied(): void
     {
-        $fixture_class = static::FIXTURE_CLASS;
         $this->mocked_wrapped->close()->shouldBeCalled();
-        $sut = new $fixture_class($this->mocked_wrapped->reveal());
+        $sut = new StreamWrapperFixture($this->mocked_wrapped->reveal());
         $sut->close();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function detachIsProxied(): void
     {
-        $fixture_class = static::FIXTURE_CLASS;
         $this->mocked_wrapped->detach()->shouldBeCalled()->willReturn(null);
-        $sut = new $fixture_class($this->mocked_wrapped->reveal());
+        $sut = new StreamWrapperFixture($this->mocked_wrapped->reveal());
         self::assertNull($sut->detach());
 
-        $fixture_class = static::FIXTURE_CLASS;
-        $resource = fopen('php://temp', 'r');
+        $resource = \fopen('php://temp', 'r');
+        self::assertIsResource($resource);
         $this->mocked_wrapped->detach()->shouldBeCalled()->willReturn($resource);
-        $sut = new $fixture_class($this->mocked_wrapped->reveal());
+        $sut = new StreamWrapperFixture($this->mocked_wrapped->reveal());
         self::assertSame($resource, $sut->detach());
-        fclose($resource);
+        \fclose($resource);
     }
 
-    /**
-     * @test
-     * @dataProvider provideSeekArgs
-     */
-    public function seekIsProxied($offset, $whence): void
+    #[Test]
+    #[DataProvider('provideSeekArgs')]
+    public function seekIsProxied(int $offset, int $whence): void
     {
-        $fixture_class = static::FIXTURE_CLASS;
         $this->mocked_wrapped->seek($offset, $whence)->shouldBeCalled();
-        $sut = new $fixture_class($this->mocked_wrapped->reveal());
+        $sut = new StreamWrapperFixture($this->mocked_wrapped->reveal());
         $sut->seek($offset, $whence);
     }
 
-    public function provideSeekArgs(): iterable
+    public static function provideSeekArgs(): iterable
     {
-        yield [10, SEEK_CUR];
-        yield [10, SEEK_END];
-        yield [10, SEEK_SET];
-        yield [10, null];
+        yield [10, \SEEK_CUR];
+        yield [10, \SEEK_END];
+        yield [10, \SEEK_SET];
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function rewindIsProxied(): void
     {
-        $fixture_class = static::FIXTURE_CLASS;
         $this->mocked_wrapped->rewind()->shouldBeCalled();
-        $sut = new $fixture_class($this->mocked_wrapped->reveal());
+        $sut = new StreamWrapperFixture($this->mocked_wrapped->reveal());
         $sut->rewind();
     }
 
-    /**
-     * @test
-     */
+    #[Test]
     public function writeIsProxied(): void
     {
-        $fixture_class = static::FIXTURE_CLASS;
         $this->mocked_wrapped->write('test')->willReturn(10);
-        $sut = new $fixture_class($this->mocked_wrapped->reveal());
+        $sut = new StreamWrapperFixture($this->mocked_wrapped->reveal());
         self::assertSame(10, $sut->write('test'));
     }
 
-    public function provideAllMethods(): iterable
+    public static function provideAllMethods(): iterable
     {
-        yield from $this->provideGetterMethods();
+        yield from self::provideGetterMethods();
     }
 
-    public function provideGetterMethods(): iterable
+    public static function provideGetterMethods(): iterable
     {
         yield "getSize (null)" => ['getSize', [], null];
         yield "getSize" => ['getSize', [], 100];
-        yield "tell" => ['getSize', [], 10];
+        yield "tell" => ['tell', [], 10];
         yield "eof (true)" => ['eof', [], true];
         yield "eof (false)" => ['eof', [], false];
         yield "isSeekable (false)" => ['isSeekable', [], false];

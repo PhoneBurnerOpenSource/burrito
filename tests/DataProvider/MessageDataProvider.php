@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace PhoneBurnerTest\Http\Message\DataProvider;
+namespace PhoneBurner\Tests\Http\Message\DataProvider;
 
 use Generator;
 use Psr\Http\Message\StreamInterface;
 
 trait MessageDataProvider
 {
-    public function provideAllMethods(): Generator
+    public static function provideAllMethods(): Generator
     {
-        yield from $this->provideWithMethods();
-        yield from $this->provideGetterMethods();
+        yield from self::provideWithMethods();
+        yield from self::provideGetterMethods();
     }
 
-    public function provideGetterMethods(): Generator
+    public static function provideGetterMethods(): Generator
     {
         yield "getProtocolVersion() => '1.1'" => ['getProtocolVersion', [], '1.1'];
         yield "getProtocolVersion() => '1.0'" => ['getProtocolVersion', [], '1.0'];
@@ -37,12 +37,12 @@ trait MessageDataProvider
 
         yield "getHeaderLine('test)" => ['getHeaderLine', ['test'], 'line one, line two'];
 
-        $body = $this->prophesize(StreamInterface::class)->reveal();
+        $body = self::createStub(StreamInterface::class);
 
         yield "getBody()" => ['getBody', [], $body];
     }
 
-    public function provideWithMethods(): Generator
+    public static function provideWithMethods(): Generator
     {
         yield "withProtocolVersion('1.1')" => ['withProtocolVersion', ['1.1']];
         yield "withProtocolVersion('1.0')" => ['withProtocolVersion', ['1.0']];
@@ -57,7 +57,7 @@ trait MessageDataProvider
 
         yield "withoutHeader('test')" => ['withoutHeader', ['test']];
 
-        $body = $this->prophesize(StreamInterface::class)->reveal();
+        $body = self::createStub(StreamInterface::class);
         yield "withBody(StreamInterface)" => ['withBody', [$body]];
     }
 }

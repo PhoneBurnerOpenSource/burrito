@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace PhoneBurnerTest\Http\Message\DataProvider;
+namespace PhoneBurner\Tests\Http\Message\DataProvider;
 
 use Generator;
 use Psr\Http\Message\UriInterface;
@@ -14,9 +14,9 @@ trait RequestDataProvider
         provideWithMethods as provideMessageWithMethods;
     }
 
-    public function provideGetterMethods(): Generator
+    public static function provideGetterMethods(): Generator
     {
-        yield from $this->provideMessageGetterMethods();
+        yield from self::provideMessageGetterMethods();
 
         yield "getRequestTarget()" => ['getRequestTarget', [], '*'];
 
@@ -25,14 +25,14 @@ trait RequestDataProvider
         yield "getMethod() => PUT" => ['getMethod', [], 'PUT'];
         yield "getMethod() => DELETE" => ['getMethod', [], 'DELETE'];
 
-        $uri = $this->prophesize(UriInterface::class)->reveal();
+        $uri = self::createStub(UriInterface::class);
 
         yield "getUri()" => ['getUri', [], $uri];
     }
 
-    public function provideWithMethods(): Generator
+    public static function provideWithMethods(): Generator
     {
-        yield from $this->provideMessageWithMethods();
+        yield from self::provideMessageWithMethods();
 
         yield "withRequestTarget(*)" => ['withRequestTarget', ['*']];
 
@@ -41,7 +41,7 @@ trait RequestDataProvider
         yield "withMethod('PUT')" => ['withMethod', ['PUT']];
         yield "withMethod('DELETE')" => ['withMethod', ['DELETE']];
 
-        $uri = $this->prophesize(UriInterface::class)->reveal();
+        $uri = self::createStub(UriInterface::class);
 
         yield "withUri(\$uri)" => ['withUri', [$uri], [$uri, false]];
         yield "withUri(\$uri, false)" => ['withUri', [$uri, false]];
